@@ -611,15 +611,18 @@ export default function GaneshChaturthiInvitation() {
     }
   }, [musicOn]);
 
+  const hasOpenedRef = useRef(false);
+
   const handleOpening = useCallback(async () => {
-    if (isCurtainOpen) return;
+    if (hasOpenedRef.current) return;      // guard — runs exactly once
+    hasOpenedRef.current = true;
     setIsCurtainOpen(true);
     const audio = audioRef.current;
     if (audio && !musicOn) {
       try { await audio.play(); setMusicOn(true); }
       catch (error) { console.warn('Music could not autoplay:', error); }
     }
-  }, [musicOn, isCurtainOpen]);
+  }, [musicOn]);
 
   /* ----------------- RSVP STORAGE ----------------- */
   useEffect(() => {
@@ -800,6 +803,7 @@ export default function GaneshChaturthiInvitation() {
       {/* FALLING PETALS */}
       <canvas ref={petalCanvasRef} className="fixed inset-0 pointer-events-none z-10" />
 
+
       {/* ================================================================
     ROYAL RED CURTAIN OPENING OVERLAY
 ================================================================ */}
@@ -808,29 +812,17 @@ export default function GaneshChaturthiInvitation() {
           <motion.div
             key="curtain-overlay"
             initial={{ opacity: 1 }}
-            exit={{
-              opacity: 0,
-              transition: { duration: 0.6, delay: 1.0 },
-            }}
-            className="fixed inset-0 z-[100] flex overflow-hidden pointer-events-auto"
+            exit={{ opacity: 1 }}
+            className="fixed inset-0 z-[100] pointer-events-none"
           >
-            {/* LEFT CRIMSON VELVET CURTAIN */}
+            {/* LEFT CRIMSON VELVET CURTAIN — slides LEFT off-screen */}
             <motion.div
-              initial={{ x: 0, opacity: 1 }}
-              animate={
-                isCurtainOpen
-                  ? { x: '-100%', opacity: 0 }
-                  : { x: [0, -4, 0], opacity: 1 }
-              }
-              transition={
-                isCurtainOpen
-                  ? {
-                    x: { duration: 1.4, ease: [0.77, 0, 0.175, 1] },
-                    opacity: { duration: 1.2, delay: 0.3, ease: 'easeOut' },
-                  }
-                  : { repeat: Infinity, duration: 6, ease: 'easeInOut' }
-              }
-              className="w-[calc(50%-10px)] h-full relative shadow-[25px_0_40px_rgba(0,0,0,0.9)] border-r border-[#D4AF37]/40"
+              initial={{ x: 0 }}
+              animate={isCurtainOpen ? { x: '-100%' } : { x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
+
+              className="absolute left-0 top-0 bottom-0 w-1/2 shadow-[25px_0_40px_rgba(0,0,0,0.9)] border-r border-[#D4AF37]/40"
               style={{
                 backgroundColor: '#80001A',
                 backgroundImage: `
@@ -850,32 +842,14 @@ export default function GaneshChaturthiInvitation() {
               <div className="absolute right-0 top-0 bottom-0 w-3 bg-gradient-to-r from-[#B8860B] via-[#FFF8DC] to-[#8B6508] shadow-md" />
             </motion.div>
 
-            {/* CENTER PILLAR */}
+            {/* RIGHT CRIMSON VELVET CURTAIN — slides RIGHT off-screen */}
             <motion.div
-              animate={isCurtainOpen ? { opacity: 0 } : { opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="w-5 h-full bg-gradient-to-b from-[#150003] via-[#300007] to-[#150003] flex justify-center items-center relative z-10 shadow-inner"
-            >
-              <div className="h-full w-1.5 bg-repeat-y bg-[length:6px_14px] bg-[radial-gradient(circle,_#FFF5C0_40%,_#AA7A1E_70%)] opacity-80" />
-            </motion.div>
+              initial={{ x: 0 }}
+              animate={isCurtainOpen ? { x: '100%' } : { x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
 
-            {/* RIGHT CRIMSON VELVET CURTAIN */}
-            <motion.div
-              initial={{ x: 0, opacity: 1 }}
-              animate={
-                isCurtainOpen
-                  ? { x: '100%', opacity: 0 }
-                  : { x: [0, 4, 0], opacity: 1 }
-              }
-              transition={
-                isCurtainOpen
-                  ? {
-                    x: { duration: 1.4, ease: [0.77, 0, 0.175, 1] },
-                    opacity: { duration: 1.2, delay: 0.3, ease: 'easeOut' },
-                  }
-                  : { repeat: Infinity, duration: 6, ease: 'easeInOut' }
-              }
-              className="w-[calc(50%-10px)] h-full relative shadow-[-25px_0_40px_rgba(0,0,0,0.9)] border-l border-[#D4AF37]/40"
+              className="absolute right-0 top-0 bottom-0 w-1/2 shadow-[-25px_0_40px_rgba(0,0,0,0.9)] border-l border-[#D4AF37]/40"
               style={{
                 backgroundColor: '#80001A',
                 backgroundImage: `
@@ -895,10 +869,23 @@ export default function GaneshChaturthiInvitation() {
               <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-[#8B6508] via-[#FFF8DC] to-[#B8860B] shadow-md" />
             </motion.div>
 
-            {/* CENTER BELL BUTTON */}
+            {/* CENTER PILLAR — fades away with the curtains */}
             <motion.div
-              animate={isCurtainOpen ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 1 }}
+              animate={isCurtainOpen ? { opacity: 0 } : { opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-5 bg-gradient-to-b from-[#150003] via-[#300007] to-[#150003] flex justify-center items-center z-10 shadow-inner pointer-events-none"
+            >
+              <div className="h-full w-1.5 bg-repeat-y bg-[length:6px_14px] bg-[radial-gradient(circle,_#FFF5C0_40%,_#AA7A1E_70%)] opacity-80" />
+            </motion.div>
+
+            {/* CENTER BELL BUTTON — fades out first, so the curtain slide is visible */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={isCurtainOpen ? { opacity: 0 } : { opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
               className="absolute inset-0 flex flex-col items-center justify-center z-50 pointer-events-auto space-y-6"
             >
               <motion.div
@@ -1449,6 +1436,6 @@ export default function GaneshChaturthiInvitation() {
           </div>
         </div>
       </section>
-    </div>
+    </div >
   );
 }
